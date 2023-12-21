@@ -18,7 +18,8 @@ Créer une application permettant de gérer des comptes bancaires conformément 
 L'architecture orientée événements, le modèle CQRS (Command Query Responsibility Segregation) et la gestion des événements sont des concepts fondamentaux dans le domaine du développement logiciel moderne. L'Event-Driven Architecture (EDA) repose sur le principe de communication asynchrone entre les différents composants d'un système, où chaque action génère un événement qui est capturé et traité par des écouteurs appropriés. Cela favorise la scalabilité, la résilience et la flexibilité des applications, permettant une réactivité accrue aux changements de l'environnement. Le modèle CQRS, quant à lui, préconise la séparation des responsabilités de lecture et d'écriture, optimisant ainsi les performances et la maintenabilité du système. Enfin, l'Event Sourcing implique la persistance de l'état d'une application sous la forme d'une séquence d'événements plutôt que d'une simple représentation d'état actuel. Cette approche offre une traçabilité complète de l'historique des actions, facilitant le débogage, la compréhension du comportement et la gestion des transactions. En combinant ces trois concepts, les développeurs peuvent concevoir des systèmes logiciels robustes, évolutifs et réactifs, répondant aux défis complexes des environnements informatiques contemporains.
 
 ### Application
-<img width="668" alt="app" src="https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/380c2982-713d-4801-bda2-78a4301ad235">
+<img width="668" alt="app" src="https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/fa069103-9965-4483-87b1-1a83379c6375">
+
 
 
 ### Création des ' Commands and Events '
@@ -166,7 +167,8 @@ Base de données
 ![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/239c9718-bbdc-4ba3-9494-9a41250b4c63)
 
  Test
- ![pos](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/a98b293a-eb64-4bba-8fd9-3b740e9b3897)
+ ![pos](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/91b100bd-bd27-4043-984f-43bf6b827adc)
+
 
 #### Aggregate
 ```bash
