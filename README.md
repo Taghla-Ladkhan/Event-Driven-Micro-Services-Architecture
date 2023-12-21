@@ -1,189 +1,174 @@
-# Activité Pratique N°3 - Event Driven Architecture with Axiom and Spring Boot
 
-## Partie 1: Event Driven Micro Services Architecture with CQRS and Event Sourcing - Use case With Axon
+# Event Driven Micro Services Architecture with CQRS and Event Sourcing - Use case With Axon
 
-### Objectif:
-Créer une application qui permet de gérer des comptes bancaires.
-Cette application va permettre de :
-* Ajouter un compte
-* Activer un compte apres creation
-* Créditer un compte 
-* Débiter un compte 
-* Consulter un compte
-* Consulter les comptes
-* Consulter les operations d'un comptes
-* Suivre en temps reel l'état d'un compte 
+### Objectif : 
 
-### Architecture 
+Créer une application permettant de gérer des comptes bancaires conformément aux motifs CQRS (Command Query Responsibility Segregation) et Event Sourcing en utilisant les frameworks AXON et Spring Boot , tout en permettant de : 
+##### - Ajouter un compte
+##### - Activer un compte
+##### - Créditer un compte
+##### - Débiter un compte
+##### - Consulter un compte
+##### - Consulter les comptes
+##### - Consulter les opérations d'un compte
+##### - Suivre en temps réel l'état d'un compte
 
-### Structure de projet 
+### Event driven architecture cqrs and event sourcing
 
-### Dependencies 
-  * Spring Data JPA
-  * Spring Web
-  * Mysql Driver
-  * AXON Framework
-  * Lombok
-  * Open API
-  * MapStruct
-  * Spring Web Flux
-  * plugin java Compiler mapStruct Processor Configuration
-  Ajouter AXON Framework :
-  ```xml
-  <dependency>
-      <groupId>org.axonframework</groupId>
-      <artifactId>axon-spring-boot-starter</artifactId>
-      <version>4.4.3</version>
-      <exclusions>
-          <exclusion>
-          <groupId>org.axonframework</groupId>
-          <artifactId>axon-server-connector</artifactId>
-          </exclusion>
-      </exclusions>
-  </dependency>
-  ```
-### CommonApi
+L'architecture orientée événements, le modèle CQRS (Command Query Responsibility Segregation) et la gestion des événements sont des concepts fondamentaux dans le domaine du développement logiciel moderne. L'Event-Driven Architecture (EDA) repose sur le principe de communication asynchrone entre les différents composants d'un système, où chaque action génère un événement qui est capturé et traité par des écouteurs appropriés. Cela favorise la scalabilité, la résilience et la flexibilité des applications, permettant une réactivité accrue aux changements de l'environnement. Le modèle CQRS, quant à lui, préconise la séparation des responsabilités de lecture et d'écriture, optimisant ainsi les performances et la maintenabilité du système. Enfin, l'Event Sourcing implique la persistance de l'état d'une application sous la forme d'une séquence d'événements plutôt que d'une simple représentation d'état actuel. Cette approche offre une traçabilité complète de l'historique des actions, facilitant le débogage, la compréhension du comportement et la gestion des transactions. En combinant ces trois concepts, les développeurs peuvent concevoir des systèmes logiciels robustes, évolutifs et réactifs, répondant aux défis complexes des environnements informatiques contemporains.
 
-#### Command
-Dans Le repertoire ```commonapi/command```, nous avons créé une classe `BaseCommand` de type générique.
-* ```BaseCommand```
-  ```java
-  public abstract  class BaseCommand<T>{
-      @TargetAggregateIdentifier // c'est identifier de aggregate dans la quel on va effectuer la commande
-      @Getter    // des objets immuable -> usage seulement de getter
-      private T id;
-  
-      public BaseCommand(T id){
-          this.id=id;
-      }
-  }
-  ```
-Dans le meme repertoire, on va créer `CreateAccountCommand`.
-* ```CreateAccountCommand```
-  ```java
-  public class CreateAccountCommand extends BaseCommand<String> {
-      private double initialBalance;
-      private String currency;
-      public CreateAccountCommand(String id, double initialBalance, String currency) {
-          super(id);
-          this.initialBalance = initialBalance;
-          this.currency = currency;
-      }
-  }
-  ```
-Et nous avons aussi la classe ```DebitAccountCommand``` et ```CreditAccountCommand``` qui extend abstract class ```BaseComand``` et ils ont deux variables ```amount``` et ```currency```.
+### Application
+<img width="668" alt="app" src="https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/380c2982-713d-4801-bda2-78a4301ad235">![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/17faf060-6f7d-4c4f-aa43-cbe6e47036db)
 
-#### Commandes
 
-Dans le package ```commandes```, nous avons créé package ```controlles``` dans lequel nous avons mis les controllers lie à la commande.
+### Création des ' Commands and Events '
 
-Les dtos seront ajouter dans le package ```commandes```. Nous avons cree `CreateAccountRequestDTO`, ce dernier contient les attributes suivant :
-* ```CreateAccountRequestDTO```
-  ```java
-  @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public class CreateAccountRequestDTO {
-     private double initialBalance;
-     private String currency;
-  }
-  ```
-Nous commençons par la creation de controller ```AccountCommandController```.
-* ```AccountCommandController```
-  ```java
-  @RestController
-  @RequestMapping(path = "/commands/account")
-  
-  public class AccountCommandController {
-  
-    private  CommandGateway commandGateway;
-  
-      public AccountCommandController(CommandGateway commandGateway) {
-          this.commandGateway = commandGateway;
-      }
-  }
-  ```
-* ```createAccount``` : qui permet d'ajouter des comptes.
-  ```java
-  @PostMapping(path = "/creat")
-      public CompletableFuture<String> createAccount(@RequestBody CreateAccountRequestDTO request){
-        CompletableFuture<String> commandResponse;
-          commandResponse = commandGateway.send(new CreateAccountCommand(
-                  UUID.randomUUID().toString(),
-                  request.getInitialBalance(),
-                  request.getCurrency()
-          ));
-          return commandResponse;
-      }
-  ```
-* ```eventStore``` va retourner le contenu de d'un aggregate.
-  ```java
-      public EventStore eventStore;
-      @GetMapping("/eventStore/{accountId}")
-      public Stream eventStore(@PathVariable String accountId) {
-          return eventStore.readEvents(accountId).asStream();
-      }
-  ```
-* ```creditAccount```: modifier le montant d'un compte.
-  ```java
-      @PutMapping(path = "/credit")
-      public CompletableFuture<String> creditAccount(@RequestBody CreditAccountRequestDTO request) {
-          return commandGateway.send(new CreditAccountCommand(
-                  request.getAccountId(),
-                  request.getAmount(),
-                  request.getCurrency()
-          ));
-      }
-  ```
-#### Event
-Dans le package ```packages/events```, nous avons cree meme logique que dans le package `commands` mais avec quelque modifications (les objets simples pas des annotations).
-Ce package contient les classes suivantes : 
-  * BaseEvent
-  * AccountCreatedEvent
-  * AccountActivatedEvent
-  * AccountCreditedEvent
-### Configuration 
-Dans le fichier ``application.propoerties``, nous avons ajouté la configuration de notre application.
-```properties
-spring.application.name=compte-service
-spring.datasource.url=jdbc:mysql://localhost:3306/mybank_db?createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDBDialect
-server.port=8082
+#### BaseCommand 
+
+```bash
+public abstract class BaseCommand<IDType> {
+    @TargetAggregateIdentifier
+    @Getter // because the commands are immutable objects
+
+    private IDType id;
+
+    public BaseCommand(IDType id) {
+        this.id = id;
+    }   
+}
 ```
 
-### DataBase 
+#### CreateAccountCommand
+```bash
+public class CreateAccountCommand extends BaseCommand<String>{
 
-Lorsqu'en lance notre projet, la base de donnee se crée automatiquement et contient les tables suivantes :
-![img.png](imgs/img.png)
+    private double initialBalance;
+    private String currency;
 
-Dans la table ```domain_event_entry```, nous avons trouvé nos enregistrements.
-### Test 
-
-On exécute notre premier test en utilisant Postman.
-* URL :`localhost:8082/commands/account/create`
-* Body: ajouter `content-type : application-json`
-* Request :
-  ```json
-    {
-    "initialBalance":9000,
-    "currency":"MAD"
+    public CreateAccountCommand(String id, double initialBalance, String currency) {
+        super(id);
+        this.initialBalance = initialBalance;
+        this.currency = currency;
     }
-  ```
-* Response : va retourner id de compte.
-#### EventStore
-* URL : ```http://localhost:8082/commands/account/eventStore/b1ff0cb9-f223-4248-a3df-38cf3fd94e34```
 
-![img.png](imgs/img2.png)
-### Aggregate
+}
+```
+#### DebitAccountCommand
+```bash
+public class DebitAccountCommand extends BaseCommand<String>{
 
-C'est dans laquelle on va execute la logique metier.
-Dans notre package commands, nous avons créé un sous package accountAggregate.
-Dans ce package nous avons créé la classe ```AccountAggregate```.
+    private double amount;
+    private String currency;
 
-```java
+    public DebitAccountCommand(String id, double amount, String currency) {
+        super(id);
+        this.amount = amount;
+        this.currency = currency;
+    }
+}
+```
+#### CreditAccountCommand
+```bash
+public class CreditAccountCommand extends BaseCommand<String>{
+    private double amount;
+    private String currency;
+
+    public CreditAccountCommand(String id, double amount, String currency) {
+        super(id);
+        this.amount = amount;
+        this.currency = currency;
+    }
+}
+```
+
+#### Commands Controllers
+```bash
+@RestController
+@RequestMapping(path = "/commands/account")
+@AllArgsConstructor
+public class AccountCommandController {
+
+    private CommandGateway commandGateway;
+
+    @RequestMapping("/create")
+    public CompletableFuture<String> createAccount(@RequestBody CreatAccountRequestDTO request){
+        CompletableFuture<String> createAccountCommandResponse = commandGateway.send(new CreateAccountCommand(
+                UUID.randomUUID().toString(),
+                request.getInitialBalance(),
+                request.getCurrency()
+        ));
+
+        return createAccountCommandResponse;
+    }
+}
+```
+#### Events 
+Dans le package packages/events, nous allons travailler avec la même logique que dans le package Commands mais avec quelques modifications (des objets simples pas des annotations). 
+Ce package contient les classes suivantes :
+#### BaseEvent 
+```bash
+public abstract class BaseEvent<EventId> {
+    @Getter
+    private EventId id;
+
+    public BaseEvent(EventId id){
+        this.id = id;
+    }
+
+}
+```
+#### AccountCreatedEvent
+```bash
+public class AccountCreatedEvent extends BaseEvent<String>{
+
+    @Getter
+    private double initialBalance;
+    @Getter
+    private String currency;
+
+    public AccountCreatedEvent(String id, double initialBalance, String currency) {
+        super(id);
+        this.initialBalance = initialBalance;
+        this.currency = currency;
+    }
+}
+
+```
+#### AccountCreditedEvent
+```bash
+public class AccountCreditedEvent extends BaseEvent<String>{
+    private double amount;
+    private String currency;
+    public AccountCreditedEvent(String id, double amount, String currency) {
+        super(id);
+        this.amount = amount;
+        this.currency = currency;
+    }
+}
+```
+#### AccountDebitedEvent
+```bash
+public class AccountDebitedEvent extends BaseEvent<String>{
+    private double amount;
+    private String currency;
+    public AccountDebitedEvent(String id, double amount, String currency) {
+        super(id);
+        this.amount = amount;
+        this.currency = currency;
+    }
+}
+```
+
+Properties
+![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/d2ec32af-1b99-4e76-99c1-17cda4713e39)
+Base de données 
+![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/239c9718-bbdc-4ba3-9494-9a41250b4c63)
+ Test
+ ![pos](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture-with-CQRS-and-Event-Sourcing-/assets/101521160/a98b293a-eb64-4bba-8fd9-3b740e9b3897)
+![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/05e1d867-d838-41a7-b775-91ed3fbc7b24)
+
+#### Aggregate
+```bash
 @Aggregate
 public class AccountAggregate {
 
@@ -194,16 +179,13 @@ public class AccountAggregate {
 
     private AccountStatus status;
 }
+
 ```
-Elle va nous permettre de définir l'état de count a l'aide l'enum ```AccountStatus```.
+C'est obligatoire d'avoir un constructeur sans paramètres. Par la suite on  ajoute dans cette class un handler qui va être éxécuté au moment de la création du compte. 
 
-Obligatoire d'avoir un constructeur sans parameter.
-Apres, nous ajoutons dans cette class un handler qui va execute ou moment de la creation de compte.
-Et pour le faire, nous avons besoin de la creation d'un event class.
+#### La fonction de décision
 
-#### La fonction de decision
-
-```java
+```bash
     @CommandHandler // subscribe sur le bus de commande
     public AccountAggregate(CreateAccountCommand command) {
         if(command.getInitialBalance()<0){
@@ -218,20 +200,49 @@ Et pour le faire, nous avons besoin de la creation d'un event class.
         // Axon va charger de l'ajouter dans la base de donnees.
     }
 ```
+#### Query 
+##### Operation
 
-#### Changement l'état de compte
+```bash
+package me.elaamiri.accountcqrseventsourcing.query.entities;
 
-Lorsque un Account va créer, la fonction ```On``` charger de changer état account.
+@Entity
+@Data @NoArgsConstructor @AllArgsConstructor
+public class Operation {
 
-```java
-    @EventSourcingHandler
-    public void on(AccountCreatedEvent event){
-        this.accountId= event.getId(); // nous avons pas le besoin, id est attribué au moment de la creation de compte.
-        this.balance=event.getInitialBalance();
-        this.currency=event.getCurrency();
-        this.status=AccountStatus.CREATED;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Temporal(TemporalType.DATE)
+    private Date date;
+    private double amount;
+
+    @Enumerated(EnumType.STRING)
+    private OperationType type;
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
+}
+```
+##### Account
+```bash
+package me.elaamiri.accountcqrseventsourcing.query.entities;
+
+@Entity
+@Data @AllArgsConstructor @NoArgsConstructor
+public class Account {
+    @Id
+    private String id;
+    private String currency;
+    private double balance;
+
+    @Enumerated(EnumType.STRING)
+    private AccountStatus accountStatus;
+
+    @OneToMany(mappedBy = "account")
+    private Collection<Operation> operations;
+}
+
 ```
 
-
-
+    
