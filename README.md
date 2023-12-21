@@ -163,8 +163,14 @@ public class AccountDebitedEvent extends BaseEvent<String>{
 Properties
 ![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/13dba9e2-978f-4160-b175-44c41df410fb)
 
+
+
+
 Base de données
 ![image](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/66a4560f-09e4-4952-bbd1-1e8e4b08297d)
+
+
+
 
  Test
  ![pos](https://github.com/Taghla-Ladkhan/Event-Driven-Micro-Services-Architecture/assets/101521160/91b100bd-bd27-4043-984f-43bf6b827adc)
